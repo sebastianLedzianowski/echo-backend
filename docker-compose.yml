@@ -1,0 +1,59 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - ollama
+    volumes:
+      - ./src:/app/src
+      - app_logs:/app/logs
+    networks:
+      - echo-network
+    restart: "no"
+
+  postgres:
+    image: postgres:17
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - echo-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - echo-network
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+
+
+volumes:
+  postgres_data:
+    driver: local
+  ollama_data:
+    driver: local
+  app_logs:
+    driver: local
+
+networks:
+  echo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

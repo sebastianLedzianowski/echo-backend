@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Potwierdź swój adres e-mail</title>
+</head>
+<body>
+    <h2>Cześć {{ username }}!</h2>
+    <p>
+        Dziękujemy za rejestrację.<br>
+        Aby potwierdzić swój adres e-mail, kliknij w poniższy link:
+    </p>
+    <p>
+        <a href="{{ host }}api/auth/confirmed_email/{{ token }}">Potwierdź e-mail</a>
+    </p>
+    <p>
+        Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość.
+    </p>
+    <hr>
+    <small>Wiadomość wygenerowana automatycznie, prosimy na nią nie odpowiadać.</small>
+</body>
+</html>
