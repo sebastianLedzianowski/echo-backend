@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
@@ -99,7 +99,13 @@ class AuthService:
 
     async def decode_token(self, token: str, expected_scope: str) -> str:
         try:
-            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            # Dodajemy weryfikację czasu wygaśnięcia
+            payload = jwt.decode(
+                token,
+                self.SECRET_KEY,
+                algorithms=[self.ALGORITHM],
+                options={"verify_exp": True}  # Włączamy sprawdzanie wygaśnięcia
+            )
             if payload.get("scope") != expected_scope:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -112,10 +118,15 @@ class AuthService:
                     detail="Brak danych w tokenie."
                 )
             return subject
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token wygasł."
+            )
         except JWTError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Nie można zweryfikować tokenu."
+                detail="Nieprawidłowe dane uwierzytelniające."
             )
 
         # -------------------------

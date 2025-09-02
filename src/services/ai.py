@@ -133,33 +133,24 @@ async def _call_ollama_chat_api(prompt: str, system_prompt: str, mode: str,
 
         except AIServiceError as e:
             logger.error(f"{str(e)}")
-            # ⬇️ Tutaj zwracamy komunikat dla użytkownika
-            return "⚠️ Wystąpił problem z generowaniem odpowiedzi. Spróbuj ponownie za chwilę."
+            raise
 
         except Exception as e:
             last_error = e
             logger.error(f"Nieoczekiwany błąd: {e}")
 
     logger.error(f"Nie udało się po {RETRY_COUNT} próbach: {last_error}")
-    return "⚠️ Serwis jest chwilowo niedostępny. Spróbuj ponownie za kilka minut."
+    raise last_error
 
 
 async def generate_empathetic_response(user_text: str, conversation_history: Optional[List[dict]] = None) -> str:
     """Generuje empatyczną odpowiedź"""
-    try:
-        return await _call_ollama_chat_api(user_text, SYSTEM_PROMPT_EMPATHETIC, "empathetic", conversation_history)
-    except Exception as e:
-        logger.error(f"Błąd w generate_empathetic_response: {e}")
-        return "⚠️ Wystąpił problem z wygenerowaniem odpowiedzi. Spróbuj ponownie za chwilę."
+    return await _call_ollama_chat_api(user_text, SYSTEM_PROMPT_EMPATHETIC, "empathetic", conversation_history)
 
 
 async def generate_practical_response(user_text: str, conversation_history: Optional[List[dict]] = None) -> str:
     """Generuje praktyczną odpowiedź"""
-    try:
-        return await _call_ollama_chat_api(user_text, SYSTEM_PROMPT_PRACTICAL, "practical", conversation_history)
-    except Exception as e:
-        logger.error(f"Błąd w generate_practical_response: {e}")
-        return "⚠️ Wystąpił problem z wygenerowaniem odpowiedzi. Spróbuj ponownie za chwilę."
+    return await _call_ollama_chat_api(user_text, SYSTEM_PROMPT_PRACTICAL, "practical", conversation_history)
 
 
 async def save_conversation_message(user_id: int, mode: str, message: str, is_user_message: bool,

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, select
 from datetime import datetime, timedelta
 
 from src.database.db import get_db
@@ -25,36 +25,58 @@ async def get_dashboard_overview(
         )
     try:
         # Statystyki użytkowników
-        total_users = db.query(func.count(User.id)).scalar()
-        active_users = db.query(func.count(User.id)).filter(User.is_active).scalar()
-        confirmed_users = db.query(func.count(User.id)).filter(User.confirmed).scalar()
-        admin_users = db.query(func.count(User.id)).filter(User.is_admin).scalar()
+        result = await db.execute(select(func.count(User.id)))
+        total_users = result.scalar()
+        
+        result = await db.execute(select(func.count(User.id)).filter(User.is_active))
+        active_users = result.scalar()
+        
+        result = await db.execute(select(func.count(User.id)).filter(User.confirmed))
+        confirmed_users = result.scalar()
+        
+        result = await db.execute(select(func.count(User.id)).filter(User.is_admin))
+        admin_users = result.scalar()
 
         # Statystyki dziennika
-        total_diary_entries = db.query(func.count(DiaryEntry.id)).scalar()
-        recent_diary_entries = db.query(func.count(DiaryEntry.id)).filter(
-            DiaryEntry.created_at >= datetime.utcnow() - timedelta(days=7)
-        ).scalar()
+        result = await db.execute(select(func.count(DiaryEntry.id)))
+        total_diary_entries = result.scalar()
+        
+        result = await db.execute(
+            select(func.count(DiaryEntry.id))
+            .filter(DiaryEntry.created_at >= datetime.utcnow() - timedelta(days=7))
+        )
+        recent_diary_entries = result.scalar()
 
         # Statystyki konwersacji
-        total_conversations = db.query(func.count(ConversationHistory.id)).scalar()
-        recent_conversations = db.query(func.count(ConversationHistory.id)).filter(
-            ConversationHistory.created_at >= datetime.utcnow() - timedelta(days=7)
-        ).scalar()
+        result = await db.execute(select(func.count(ConversationHistory.id)))
+        total_conversations = result.scalar()
+        
+        result = await db.execute(
+            select(func.count(ConversationHistory.id))
+            .filter(ConversationHistory.created_at >= datetime.utcnow() - timedelta(days=7))
+        )
+        recent_conversations = result.scalar()
 
         # Statystyki aktywności w ostatnich 24h
         last_24h = datetime.utcnow() - timedelta(hours=24)
-        new_users_24h = db.query(func.count(User.id)).filter(
-            User.created_at >= last_24h
-        ).scalar()
+        
+        result = await db.execute(
+            select(func.count(User.id))
+            .filter(User.created_at >= last_24h)
+        )
+        new_users_24h = result.scalar()
 
-        new_diary_24h = db.query(func.count(DiaryEntry.id)).filter(
-            DiaryEntry.created_at >= last_24h
-        ).scalar()
+        result = await db.execute(
+            select(func.count(DiaryEntry.id))
+            .filter(DiaryEntry.created_at >= last_24h)
+        )
+        new_diary_24h = result.scalar()
 
-        new_conversations_24h = db.query(func.count(ConversationHistory.id)).filter(
-            ConversationHistory.created_at >= last_24h
-        ).scalar()
+        result = await db.execute(
+            select(func.count(ConversationHistory.id))
+            .filter(ConversationHistory.created_at >= last_24h)
+        )
+        new_conversations_24h = result.scalar()
 
         return {
             "users": {
@@ -100,30 +122,39 @@ async def get_users_statistics(
         )
     try:
         # Użytkownicy według statusu
-        users_by_status = db.query(
-            User.is_active,
-            User.confirmed,
-            func.count(User.id)
-        ).group_by(User.is_active, User.confirmed).all()
+        result = await db.execute(
+            select(
+                User.is_active,
+                User.confirmed,
+                func.count(User.id)
+            ).group_by(User.is_active, User.confirmed)
+        )
+        users_by_status = result.all()
 
         # Użytkownicy według daty rejestracji (ostatnie 30 dni)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        registrations_by_day = db.query(
-            func.date(User.created_at).label('date'),
-            func.count(User.id).label('count')
-        ).filter(
-            User.created_at >= thirty_days_ago
-        ).group_by(func.date(User.created_at)).order_by(desc('date')).all()
+        result = await db.execute(
+            select(
+                func.date(User.created_at).label('date'),
+                func.count(User.id).label('count')
+            ).filter(
+                User.created_at >= thirty_days_ago
+            ).group_by(func.date(User.created_at)).order_by(desc('date'))
+        )
+        registrations_by_day = result.all()
 
         # Top użytkownicy według aktywności
-        top_active_users = db.query(
-            User.username,
-            User.email,
-            func.count(DiaryEntry.id).label('diary_count'),
-            func.count(ConversationHistory.id).label('conversation_count')
-        ).outerjoin(DiaryEntry).outerjoin(ConversationHistory).group_by(
-            User.id, User.username, User.email
-        ).order_by(desc('diary_count'), desc('conversation_count')).limit(10).all()
+        result = await db.execute(
+            select(
+                User.username,
+                User.email,
+                func.count(DiaryEntry.id).label('diary_count'),
+                func.count(ConversationHistory.id).label('conversation_count')
+            ).outerjoin(DiaryEntry).outerjoin(ConversationHistory).group_by(
+                User.id, User.username, User.email
+            ).order_by(desc('diary_count'), desc('conversation_count')).limit(10)
+        )
+        top_active_users = result.all()
 
         return {
             "users_by_status": [
@@ -174,26 +205,35 @@ async def get_diary_statistics(
     try:
         # Wpisy według dnia (ostatnie 30 dni)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        entries_by_day = db.query(
-            func.date(DiaryEntry.created_at).label('date'),
-            func.count(DiaryEntry.id).label('count')
-        ).filter(
-            DiaryEntry.created_at >= thirty_days_ago
-        ).group_by(func.date(DiaryEntry.created_at)).order_by(desc('date')).all()
+        result = await db.execute(
+            select(
+                func.date(DiaryEntry.created_at).label('date'),
+                func.count(DiaryEntry.id).label('count')
+            ).filter(
+                DiaryEntry.created_at >= thirty_days_ago
+            ).group_by(func.date(DiaryEntry.created_at)).order_by(desc('date'))
+        )
+        entries_by_day = result.all()
 
         # Wpisy według użytkownika
-        entries_by_user = db.query(
-            User.username,
-            func.count(DiaryEntry.id).label('entry_count')
-        ).join(DiaryEntry).group_by(User.id, User.username).order_by(
-            desc('entry_count')
-        ).limit(20).all()
+        result = await db.execute(
+            select(
+                User.username,
+                func.count(DiaryEntry.id).label('entry_count')
+            ).join(DiaryEntry).group_by(User.id, User.username).order_by(
+                desc('entry_count')
+            ).limit(20)
+        )
+        entries_by_user = result.all()
 
         # Analiza tagów emocji
         all_tags = []
-        entries_with_tags = db.query(DiaryEntry.emotion_tags).filter(
-            DiaryEntry.emotion_tags.isnot(None)
-        ).all()
+        result = await db.execute(
+            select(DiaryEntry.emotion_tags).filter(
+                DiaryEntry.emotion_tags.isnot(None)
+            )
+        )
+        entries_with_tags = result.all()
 
         for entry in entries_with_tags:
             if entry.emotion_tags:
@@ -257,36 +297,51 @@ async def get_conversations_statistics(
         )
     try:
         # Konwersacje według trybu
-        conversations_by_mode = db.query(
-            ConversationHistory.mode,
-            func.count(ConversationHistory.id).label('count')
-        ).group_by(ConversationHistory.mode).all()
+        result = await db.execute(
+            select(
+                ConversationHistory.mode,
+                func.count(ConversationHistory.id).label('count')
+            ).group_by(ConversationHistory.mode)
+        )
+        conversations_by_mode = result.all()
 
         # Konwersacje według dnia (ostatnie 30 dni)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        conversations_by_day = db.query(
-            func.date(ConversationHistory.created_at).label('date'),
-            func.count(ConversationHistory.id).label('count')
-        ).filter(
-            ConversationHistory.created_at >= thirty_days_ago
-        ).group_by(func.date(ConversationHistory.created_at)).order_by(desc('date')).all()
+        result = await db.execute(
+            select(
+                func.date(ConversationHistory.created_at).label('date'),
+                func.count(ConversationHistory.id).label('count')
+            ).filter(
+                ConversationHistory.created_at >= thirty_days_ago
+            ).group_by(func.date(ConversationHistory.created_at)).order_by(desc('date'))
+        )
+        conversations_by_day = result.all()
 
         # Konwersacje według użytkownika
-        conversations_by_user = db.query(
-            User.username,
-            func.count(ConversationHistory.id).label('conversation_count')
-        ).join(ConversationHistory).group_by(User.id, User.username).order_by(
-            desc('conversation_count')
-        ).limit(20).all()
+        result = await db.execute(
+            select(
+                User.username,
+                func.count(ConversationHistory.id).label('conversation_count')
+            ).join(ConversationHistory).group_by(User.id, User.username).order_by(
+                desc('conversation_count')
+            ).limit(20)
+        )
+        conversations_by_user = result.all()
 
         # Rozkład wiadomości użytkownik vs AI
-        user_messages = db.query(func.count(ConversationHistory.id)).filter(
-            ConversationHistory.is_user_message
-        ).scalar()
+        result = await db.execute(
+            select(func.count(ConversationHistory.id)).filter(
+                ConversationHistory.is_user_message
+            )
+        )
+        user_messages = result.scalar()
 
-        ai_messages = db.query(func.count(ConversationHistory.id)).filter(
-            ConversationHistory.is_user_message.is_(False)
-        ).scalar()
+        result = await db.execute(
+            select(func.count(ConversationHistory.id)).filter(
+                ConversationHistory.is_user_message.is_(False)
+            )
+        )
+        ai_messages = result.scalar()
 
         return {
             "conversations_by_mode": [

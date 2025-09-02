@@ -59,20 +59,20 @@ async def change_password(
     # walidacja nowego hasła
     auth_service.validate_password(data.new_password)
     new_hash = auth_service.get_password_hash(data.new_password)
-    await repository_users.update_password(current_user, new_hash, db)
+    await repository_users.update_password(current_user.username, new_hash, db)
     return {"detail": "Hasło zostało zmienione."}
 
 
 @router.delete("/me/")
 async def delete_account(
-        data: ConfirmPassword = Body(...),
+        password: str,
         current_user: User = Depends(auth_service.get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     """
     Usuń konto (potwierdzenie hasłem).
     """
-    if not await auth_service.verify_password(data.password, current_user.password):
+    if not await auth_service.verify_password(password, current_user.password):
         raise HTTPException(status_code=400, detail="Nieprawidłowe hasło.")
     await repository_users.delete_user(current_user, db)
     return {"detail": "Konto zostało usunięte."}

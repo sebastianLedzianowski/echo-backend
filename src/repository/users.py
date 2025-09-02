@@ -69,6 +69,7 @@ async def create_user(body: UserModel, db: AsyncSession) -> User:
 
 async def update_token(user: User, token: Optional[str], db: AsyncSession) -> None:
     user.refresh_token = token
+    db.add(user)
     await db.commit()
 
 
@@ -76,9 +77,9 @@ async def confirmed_email(email: str, db: AsyncSession) -> None:
     stmt = select(User).where(User.email == email)
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
-
     if user:
         user.confirmed = True
+        db.add(user)
         await db.commit()
 
 
@@ -98,8 +99,12 @@ async def update_profile(
     return user
 
 
-async def update_password(user: User, hashed_password: str, db: AsyncSession) -> None:
+async def update_password(username: str, hashed_password: str, db: AsyncSession):
+    user = await get_user_by_username(username, db)
+    if not user:
+        raise ValueError("Użytkownik nie istnieje")
     user.password = hashed_password
+    db.add(user)
     await db.commit()
 
 

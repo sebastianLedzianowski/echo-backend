@@ -56,6 +56,7 @@ class DiaryEntry(Base):
     created_at = Column(DateTime, default=func.now())
     title = Column(String(200), nullable=True)
     content = Column(Text, nullable=False)
+    emotion_tags = Column(Text, nullable=True)
 
     user = relationship("User", back_populates="diary_entries")
 
@@ -66,6 +67,7 @@ class DiaryEntry(Base):
             "created_at": self.created_at,
             "title": self.title,
             "content": self.content,
+            "emotion_tags": self.emotion_tags,
         }
 
 

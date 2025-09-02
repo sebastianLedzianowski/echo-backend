@@ -22,8 +22,9 @@ class UserDb(BaseModel):
     full_name: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class AdminUserDb(BaseModel):
@@ -33,9 +34,11 @@ class AdminUserDb(BaseModel):
     full_name: Optional[str] = None
     is_active: bool
     is_admin: bool
+    confirmed: bool
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class UserResponse(BaseModel):
     user: UserDb

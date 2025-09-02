@@ -68,7 +68,7 @@ async def handle_ai_conversation(user_id: int, mode: str, text: str, db: AsyncSe
         raise
     except Exception as e:
         logger.error(f"Nieoczekiwany błąd w handle_ai_conversation: {e}")
-        raise HTTPException(status_code=500, detail="Wystąpił nieoczekiwany błąd.")
+        raise HTTPException(status_code=500, detail=f"Wystąpił nieoczekiwany błąd: {str(e)}")
 
 
 @router.post("/empathetic/send")
