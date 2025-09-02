@@ -24,10 +24,19 @@ dependencies = [
     "httpie (>=3.2.4,<4.0.0)",
     "pytest-asyncio (>=1.1.0,<2.0.0)",
     "bcrypt (>=4.3.0,<5.0.0)",
-    "aiosqlite (>=0.21.0,<0.22.0)"
+    "aiosqlite (>=0.21.0,<0.22.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "pytest-mock (>=3.14.1,<4.0.0)",
+    "pytest-cov (>=6.2.1,<7.0.0)"
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:passlib.*:",
+    "ignore::PendingDeprecationWarning",
+    "ignore::DeprecationWarning:pkg_resources.*:"
+]
