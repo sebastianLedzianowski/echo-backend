@@ -6,8 +6,10 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from src.routes import auth, users, admin, echo, admin_dashboard
+from src.routes import auth, users, admin, echo, stats, psychological_tests, prometheus_stats
 from src.conf.config import settings
+from src.services.metrics import instrumentator
+from src.middleware import MetricsMiddleware
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -83,6 +85,9 @@ app.add_middleware(
 # Middleware do obsługi błędów
 app.add_middleware(ErrorHandlingMiddleware)
 
+# Metrics middleware
+app.add_middleware(MetricsMiddleware)
+
 # CORS middleware z ograniczonymi metodami i nagłówkami
 app.add_middleware(
     CORSMiddleware,
@@ -105,9 +110,13 @@ app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
 app.include_router(admin.router, prefix='/api')
 app.include_router(echo.router, prefix='/api')
+app.include_router(psychological_tests.router, prefix='/api')
 
-app.include_router(admin_dashboard.router, prefix='/api')
+app.include_router(stats.router, prefix='/api')
+app.include_router(prometheus_stats.router, prefix='/api')
 
+# Instrument the app with Prometheus metrics
+instrumentator.instrument(app).expose(app)
 
 @app.get("/")
 async def read_root():

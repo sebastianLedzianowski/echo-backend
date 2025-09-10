@@ -77,11 +77,11 @@ async def login(
 
     db_user = await repository_users.get_user_by_username(body.username, db)
     if not db_user:
+        logger.info("bledny username %s", body.username)
         return JSONResponse(status_code=401, content={"detail": "Błędny Username."})
     if not await auth_service.verify_password(body.password, db_user.password):
+        logger.info("bledny password %s", body.password)
         return JSONResponse(status_code=401, content={"detail": "Złe hasło."})
-    if db_user.email and not db_user.confirmed:
-        return JSONResponse(status_code=401, content={"detail": "Email nie został potwierdzony."})
 
     access_token = auth_service.create_token(subject=db_user.username, scope="access_token")
     refresh_token = auth_service.create_token(subject=db_user.username, scope="refresh_token")

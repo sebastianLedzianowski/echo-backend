@@ -73,8 +73,9 @@ async def test_login_unconfirmed_email(client: AsyncClient, db_session: AsyncSes
     await db_session.commit()
     
     response = await client.post("/api/auth/login", data={"username": user_data.username, "password": user_data.password})
-    assert response.status_code == 401
-    assert "nie został potwierdzony" in response.json()["detail"]
+    assert response.status_code == 200
+    body = response.json()
+    assert "access_token" in body and "refresh_token" in body
 
 
 @pytest.mark.asyncio

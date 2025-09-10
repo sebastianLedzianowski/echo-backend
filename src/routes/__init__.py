@@ -1,2 +1,2 @@
-from . import auth, users, admin, echo, admin_dashboard
+from . import auth, users, admin, echo, stats
 
