@@ -210,14 +210,14 @@ class LLMMetrics(Base):
     endpoint = Column(String(255), nullable=False)  # Endpoint który wywołał LLM
     model_name = Column(String(100), nullable=True)  # Nazwa modelu LLM
     prompt_tokens = Column(Integer, nullable=True)  # Liczba tokenów w prompt
-    completion_tokens = Column(Integer, nullable=True)  # Liczba tokenów w odpowiedzi
+    completion_tokens = Column(Integer, nullable=True)  # Tokeny w odpowiedzi
     total_tokens = Column(Integer, nullable=True)  # Całkowita liczba tokenów
     response_time_ms = Column(Float, nullable=False)  # Czas odpowiedzi LLM w ms
     cost_usd = Column(Float, nullable=True)  # Koszt w USD (jeśli dostępny)
     temperature = Column(Float, nullable=True)  # Temperatura modelu
     max_tokens = Column(Integer, nullable=True)  # Maksymalna liczba tokenów
     success = Column(Boolean, default=True)  # Czy odpowiedź była udana
-    error_message = Column(Text, nullable=True)  # Komunikat błędu jeśli wystąpił
+    error_message = Column(Text, nullable=True)  # Komunikat błędu
     created_at = Column(DateTime, default=func.now())
 
     user = relationship("User", back_populates="llm_metrics")
@@ -238,4 +238,35 @@ class LLMMetrics(Base):
             "success": self.success,
             "error_message": self.error_message,
             "created_at": self.created_at,
+        }
+
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)  # Imię i nazwisko
+    email = Column(String(250), nullable=False)  # Adres email
+    subject = Column(String(200), nullable=False)  # Temat wiadomości
+    message = Column(Text, nullable=False)  # Treść wiadomości
+    message_type = Column(String(20), nullable=False)  # Typ wiadomości
+    priority = Column(Integer, default=1, nullable=False)  # Priorytet 1-5
+    status = Column(String(20), default="new", nullable=False)  # Status wiadomości
+    admin_notes = Column(Text, nullable=True)  # Notatki administratora
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    def dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "subject": self.subject,
+            "message": self.message,
+            "message_type": self.message_type,
+            "priority": self.priority,
+            "status": self.status,
+            "admin_notes": self.admin_notes,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
         }

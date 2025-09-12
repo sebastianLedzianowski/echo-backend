@@ -17,12 +17,12 @@ from src.services.psychological_tests import PsychologicalTestService
 router = APIRouter(prefix="/tests", tags=["Testy psychologiczne"])
 
 
-@router.post("/asrs", response_model=TestResult, 
+@router.post("/asrs", response_model=TestResult,
              summary="Prześlij test ASRS v1.1")
 async def submit_asrs_test(
-    answers: ASRSAnswers,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db)
+        answers: ASRSAnswers,
+        current_user: User = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Prześlij odpowiedzi na test ASRS v1.1 (Adult ADHD Self-Report Scale)
@@ -41,21 +41,21 @@ async def submit_asrs_test(
                     status_code=400,
                     detail="Odpowiedzi muszą być w zakresie 0-4"
                 )
-        
+
         # Przygotowanie danych
         answers_dict = {
             "part_a": answers.part_a,
             "part_b": answers.part_b
         }
-        
+
         # Obliczenie wyniku
         score, interpretation = PsychologicalTestService.calculate_asrs_score(answers_dict)
-        
+
         # Generowanie analizy AI
         ai_analysis = await PsychologicalTestService.get_ai_analysis(
             "asrs", answers_dict, score, interpretation
         )
-        
+
         # Zapisanie w bazie danych
         test_result = PsychologicalTest(
             user_id=current_user.id,
@@ -65,13 +65,13 @@ async def submit_asrs_test(
             interpretation=interpretation,
             ai_analysis=ai_analysis
         )
-        
+
         db.add(test_result)
         await db.commit()
         await db.refresh(test_result)
-        
+
         return TestResult.model_validate(test_result)
-        
+
     except HTTPException:
         await db.rollback()
         raise
@@ -85,9 +85,9 @@ async def submit_asrs_test(
 
 @router.post("/gad7", response_model=TestResult, summary="Prześlij test GAD-7")
 async def submit_gad7_test(
-    answers: GAD7Answers,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db)
+        answers: GAD7Answers,
+        current_user: User = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Prześlij odpowiedzi na test GAD-7 (Kwestionariusz Zaburzeń Lękowych)
@@ -109,18 +109,18 @@ async def submit_gad7_test(
                     status_code=400,
                     detail="Odpowiedzi muszą być w zakresie 0-3"
                 )
-        
+
         # Przygotowanie danych
         answers_dict = {"answers": answers.answers}
-        
+
         # Obliczenie wyniku
         score, interpretation = PsychologicalTestService.calculate_gad7_score(answers_dict)
-        
+
         # Generowanie analizy AI
         ai_analysis = await PsychologicalTestService.get_ai_analysis(
             "gad7", answers_dict, score, interpretation
         )
-        
+
         # Zapisanie w bazie danych
         test_result = PsychologicalTest(
             user_id=current_user.id,
@@ -130,13 +130,13 @@ async def submit_gad7_test(
             interpretation=interpretation,
             ai_analysis=ai_analysis
         )
-        
+
         db.add(test_result)
         await db.commit()
         await db.refresh(test_result)
-        
+
         return TestResult.model_validate(test_result)
-        
+
     except HTTPException:
         await db.rollback()
         raise
@@ -150,9 +150,9 @@ async def submit_gad7_test(
 
 @router.post("/phq9", response_model=TestResult, summary="Prześlij test PHQ-9")
 async def submit_phq9_test(
-    answers: PHQ9Answers,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db)
+        answers: PHQ9Answers,
+        current_user: User = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Prześlij odpowiedzi na test PHQ-9 (Kwestionariusz Zdrowia Pacjenta-9)
@@ -178,23 +178,23 @@ async def submit_phq9_test(
                     status_code=400,
                     detail="Odpowiedzi muszą być w zakresie 0-3"
                 )
-        
+
         # Sprawdzenie pytania 9 (myśli samobójcze)
         if len(answers.answers) >= 9 and answers.answers[8] >= 2:
             # Dodanie ostrzeżenia do analizy jeśli są myśli samobójcze
             pass
-        
+
         # Przygotowanie danych
         answers_dict = {"answers": answers.answers}
-        
+
         # Obliczenie wyniku
         score, interpretation = PsychologicalTestService.calculate_phq9_score(answers_dict)
-        
+
         # Generowanie analizy AI
         ai_analysis = await PsychologicalTestService.get_ai_analysis(
             "phq9", answers_dict, score, interpretation
         )
-        
+
         # Zapisanie w bazie danych
         test_result = PsychologicalTest(
             user_id=current_user.id,
@@ -204,13 +204,13 @@ async def submit_phq9_test(
             interpretation=interpretation,
             ai_analysis=ai_analysis
         )
-        
+
         db.add(test_result)
         await db.commit()
         await db.refresh(test_result)
-        
+
         return TestResult.model_validate(test_result)
-        
+
     except HTTPException:
         await db.rollback()
         raise
@@ -224,11 +224,11 @@ async def submit_phq9_test(
 
 @router.get("/history", response_model=TestHistoryResponse, summary="Historia testów użytkownika")
 async def get_test_history(
-    test_type: TestTypeEnum = None,
-    limit: int = 10,
-    offset: int = 0,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db)
+        test_type: TestTypeEnum = None,
+        limit: int = 10,
+        offset: int = 0,
+        current_user: User = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Pobierz historię testów psychologicznych dla zalogowanego użytkownika
@@ -241,23 +241,23 @@ async def get_test_history(
     query = select(PsychologicalTest).filter(
         PsychologicalTest.user_id == current_user.id
     )
-    
+
     if test_type:
         query = query.filter(PsychologicalTest.test_type == test_type.value)
-    
+
     # Pobierz liczbę wszystkich wyników
     count_query = select(func.count()).select_from(query.subquery())
     count_result = await db.execute(count_query)
     total_count = count_result.scalar()
-    
+
     # Pobierz wyniki z paginacją
-    paginated_query = query.order_by(PsychologicalTest.created_at.desc())\
-                          .offset(offset)\
-                          .limit(limit)
-    
+    paginated_query = query.order_by(PsychologicalTest.created_at.desc()) \
+        .offset(offset) \
+        .limit(limit)
+
     result = await db.execute(paginated_query)
     tests = result.scalars().all()
-    
+
     return TestHistoryResponse(
         tests=[TestResult.model_validate(test) for test in tests],
         total_count=total_count
@@ -266,9 +266,9 @@ async def get_test_history(
 
 @router.get("/result/{test_id}", response_model=TestResult, summary="Pobierz wynik konkretnego testu")
 async def get_test_result(
-    test_id: int,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db)
+        test_id: int,
+        current_user: User = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Pobierz szczegółowy wynik konkretnego testu
@@ -279,13 +279,13 @@ async def get_test_result(
     )
     result = await db.execute(query)
     test_result = result.scalar_one_or_none()
-    
+
     if not test_result:
         raise HTTPException(
             status_code=404,
             detail="Test nie został znaleziony"
         )
-    
+
     return TestResult.model_validate(test_result)
 
 
@@ -302,11 +302,11 @@ async def get_test_questions(
             "test_name": "ASRS v1.1",
             "description": "Adult ADHD Self-Report Scale (ASRS v1.1) to narzędzie przesiewowe opracowane przez WHO do oceny objawów ADHD u dorosłych.",
             "instructions": "Odpowiedz na pytania na podstawie swoich odczuć i doświadczeń w ciągu ostatnich 6 miesięcy.",
-            "source": [
+            "source": {
                 "authors": "Kessler RC, Adler L, Ames M, Demler O, Faraone S, Hiripi E, et al. (2005)",
                 "link_original": "https://pubmed.ncbi.nlm.nih.gov/15841682/",
                 "link_official": "https://www.hcp.med.harvard.edu/ncs/asrs.php"
-            ],
+            },
             "scale": [
                 {"label": "Nigdy", "value": 0},
                 {"label": "Rzadko", "value": 1},
@@ -341,11 +341,11 @@ async def get_test_questions(
             "test_name": "GAD-7",
             "description": "Kwestionariusz GAD-7 służy do oceny nasilenia objawów lęku uogólnionego.",
             "instructions": "Odpowiedz na pytania na podstawie swoich odczuć i doświadczeń w ciągu ostatnich 2 tygodni.",
-            "source": [
-                "authors": "Spitzer RL, Kroenke K, Williams JBW, B广ay-Jones D (2006)",
+            "source": {
+                "authors": "Spitzer RL, Kroenke K, Williams JBW, Löwe B (2006)",
                 "link_original": "https://pubmed.ncbi.nlm.nih.gov/16717171/",
                 "link_official": "https://www.psychiatry.org/patients-families/anxiety/gad-7"
-            ],
+            },
             "scale": [
                 {"label": "Wcale", "value": 0},
                 {"label": "Kilka dni", "value": 1},
@@ -366,11 +366,11 @@ async def get_test_questions(
             "test_name": "PHQ-9",
             "description": "Kwestionariusz Zdrowia Pacjenta-9 (PHQ-9) to narzędzie przesiewowe do oceny nasilenia objawów depresyjnych.",
             "instructions": "Odpowiedz na pytania na podstawie swoich odczuć i doświadczeń w ciągu ostatnich 2 tygodni.",
-            "source": [
+            "source": {
                 "authors": "Spitzer RL, Kroenke K, Williams JB (2001)",
                 "link_original": "https://pubmed.ncbi.nlm.nih.gov/11556941/",
                 "link_polish": "https://www.ecfs.eu/sites/default/files/general-content-files/working-groups/Mental%20Health/PHQ9_Polish%20for%20Poland.pdf"
-            ],
+            },
             "scale": [
                 {"label": "Wcale", "value": 0},
                 {"label": "Kilka dni", "value": 1},
@@ -390,11 +390,11 @@ async def get_test_questions(
             ]
         }
     }
-    
+
     if test_type.value not in questions_data:
         raise HTTPException(
             status_code=404,
             detail="Nieznany typ testu"
         )
-    
+
     return questions_data[test_type.value]

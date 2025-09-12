@@ -16,6 +16,7 @@ from src.routes.admin import router as admin_router
 from src.routes.stats import router as stats_router
 from src.routes.echo import router as echo_router
 from src.routes.psychological_tests import router as psychological_tests_router
+from src.routes.contact import router as contact_router
 from src.services.auth import auth_service
 
 # Test DB w pamięci (RAM)
@@ -75,6 +76,7 @@ async def app(db_session):
     test_app.include_router(stats_router, prefix="/api")
     test_app.include_router(echo_router, prefix="/api")
     test_app.include_router(psychological_tests_router, prefix="/api")
+    test_app.include_router(contact_router, prefix="/api")
 
     async def _get_test_db():
         yield db_session

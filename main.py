@@ -6,7 +6,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from src.routes import auth, users, admin, echo, stats, psychological_tests, prometheus_stats
+from src.routes import (auth, users, admin, echo, stats, psychological_tests,
+                        prometheus_stats, contact)
 from src.conf.config import settings
 from src.services.metrics import instrumentator
 from src.middleware import MetricsMiddleware
@@ -19,10 +20,10 @@ logger = logging.getLogger(__name__)
 # Nie konfigurujemy basic config, żeby uniknąć podwójnych logów
 if not logger.handlers:
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
-
 
 
 # Konfiguracja root loggera
@@ -32,7 +33,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("app")
-
 
 
 # Middleware do obsługi błędów
@@ -111,6 +111,7 @@ app.include_router(users.router, prefix='/api')
 app.include_router(admin.router, prefix='/api')
 app.include_router(echo.router, prefix='/api')
 app.include_router(psychological_tests.router, prefix='/api')
+app.include_router(contact.router, prefix='/api')
 
 app.include_router(stats.router, prefix='/api')
 app.include_router(prometheus_stats.router, prefix='/api')
@@ -122,7 +123,7 @@ instrumentator.instrument(app).expose(app)
 async def read_root():
     """
     Endpoint główny aplikacji.
-    
+
     Returns:
         dict: Podstawowe informacje o API
     """

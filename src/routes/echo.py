@@ -10,7 +10,7 @@ from src.services.ai import (
     generate_empathetic_response,
     generate_practical_response,
     save_diary_entry,
-    test_ollama_connection  # Nowa funkcja diagnostyczna
+    check_ollama_connection  # Nowa funkcja diagnostyczna
 )
 from src.services.metrics import record_conversation, record_diary_entry
 from src.services.auth import auth_service
@@ -80,7 +80,7 @@ async def handle_ai_conversation(
             logger.error(f"Błąd serwisu AI: {e}")
             # Jeśli to błąd związany z modelem, spróbuj zdiagnozować problem
             if e.error_type == "model_not_found":
-                diagnostic = await test_ollama_connection()
+                diagnostic = await check_ollama_connection()
                 logger.error(f"Diagnostyka Ollama: {diagnostic}")
             raise HTTPException(
                 status_code=503,
@@ -152,7 +152,7 @@ async def send_diary_message(
                 status_code=400, detail="Wpis do dziennika nie może być pusty."
             )
 
-        if len(request.text) > 10000:  # Większy limit dla dziennika
+        if len(request.text) > 5000:  # Większy limit dla dziennika
             raise HTTPException(
                 status_code=400,
                 detail="Wpis do dziennika jest zbyt długi. Maks. 10000 znaków."
@@ -300,7 +300,7 @@ async def get_ai_diagnostics(
         logger.info(
             f"Uruchomiono diagnostykę AI przez użytkownika {current_user.id}"
         )
-        diagnostic = await test_ollama_connection()
+        diagnostic = await check_ollama_connection()
         return diagnostic
     except Exception as e:
         logger.error(f"Błąd diagnostyki AI: {e}")

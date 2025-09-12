@@ -1,2 +1,2 @@
-from . import auth, users, admin, echo, stats
+from . import auth, users, admin, echo, stats, contact
 

@@ -628,7 +628,7 @@ async def get_conversation_history(
 
 
 # Funkcja diagnostyczna
-async def test_ollama_connection() -> dict:
+async def check_ollama_connection() -> dict:
     """Testuje połączenie z Ollama i zwraca informacje diagnostyczne"""
     result = {
         "ollama_url": OLLAMA_URL,
